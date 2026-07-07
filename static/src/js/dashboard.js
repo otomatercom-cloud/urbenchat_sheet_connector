@@ -31,29 +31,47 @@ class UrbenchatDashboard extends Component {
             this._startAutoRefresh();
             this._fixHeight();
             window.addEventListener("resize", this._onResize);
+            // Chart.js loads async from CDN and reflows the page afterward;
+            // a single snapshot at mount time is too early. Re-check a few
+            // times as things settle, then watch for any further size
+            // changes to the content itself (table rows, chart resize, etc).
+            [50, 200, 500, 1000, 2000].forEach(ms => setTimeout(() => this._fixHeight(), ms));
+            if (window.ResizeObserver && this.rootRef.el) {
+                this._resizeObserver = new ResizeObserver(() => this._fixHeight());
+                this._resizeObserver.observe(this.rootRef.el);
+                this._resizeObserver.observe(document.body);
+            }
         });
         onPatched(() => { if (!this.state.loading) { this._renderCharts(); this._fixHeight(); } });
         onWillUnmount(() => {
             this._stopAutoRefresh();
             window.removeEventListener("resize", this._onResize);
+            if (this._resizeObserver) this._resizeObserver.disconnect();
         });
     }
 
     // ── Force a real, guaranteed-working scroll area ────────────────────────
-    // Odoo's backend layout (and/or theme overrides) can clip this component
-    // in ways that vary by view/screen, so instead of guessing at ancestor
-    // CSS, we measure the actual remaining viewport space at runtime and pin
-    // our own element to exactly that height with its own scrollbar.
+    // Odoo's backend layout wraps client actions in ancestors whose height
+    // is resolved via flex, not a plain fixed value — CSS height:100% on our
+    // own root can't reliably inherit that (it collapses to auto in some
+    // views), so we measure the real remaining viewport space at runtime.
+    // We DON'T shrink the height when content is smaller than the viewport
+    // (that would remove the need for scrolling); we only ever set it based
+    // on the fixed top offset so it consistently spans from the header down
+    // to the bottom of the window, with its own scrollbar handling anything
+    // taller than that.
     _fixHeight() {
         const el = this.rootRef.el;
         if (!el) return;
         const top = el.getBoundingClientRect().top;
         const available = Math.max(window.innerHeight - top, 300);
+        if (el.style.height === available + "px") return; // avoid ResizeObserver feedback loop
         el.style.height = available + "px";
         el.style.maxHeight = available + "px";
         el.style.overflowY = "auto";
         el.style.overflowX = "hidden";
         el.style.boxSizing = "border-box";
+        el.style.display = "block";
     }
 
     // ── Data ──────────────────────────────────────────────────────────────

@@ -3,10 +3,10 @@
     padding:20px 24px;
     background:#f8fafc;
     font-family:"Inter","Roboto",sans-serif;
-    overflow-y:auto;
-    overflow-x:hidden;
     box-sizing:border-box;
     display:block;
+    overflow-y:auto;
+    overflow-x:hidden;
 }
 
 /* Header */
