@@ -31,7 +31,11 @@
         'web.assets_backend': [
             'urbenchat_sheet_connector/static/src/css/dashboard.css',
             'urbenchat_sheet_connector/static/src/xml/dashboard.xml',
+            'urbenchat_sheet_connector/static/src/xml/adset_performance_view.xml',
+            'urbenchat_sheet_connector/static/src/xml/per_ad_performance_view.xml',
             'urbenchat_sheet_connector/static/src/js/dashboard.js',
+            'urbenchat_sheet_connector/static/src/js/adset_performance_view.js',
+            'urbenchat_sheet_connector/static/src/js/per_ad_performance_view.js',
         ],
     },
     'installable': True,

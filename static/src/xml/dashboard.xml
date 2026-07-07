@@ -24,6 +24,11 @@
         </div>
     </div>
 
+    <div class="d-flex gap-2 px-3 py-2" style="border-bottom:1px solid #e2e8f0;background:#fff;">
+        <button class="btn btn-outline-primary btn-sm" t-on-click="openAdsetPerformance">🎯 Ad Set Performance</button>
+        <button class="btn btn-outline-primary btn-sm" t-on-click="openPerAdPerformance">🔖 Per Ad Performance</button>
+    </div>
+
     <t t-if="state.loading">
         <div class="uc_loading"><div class="spinner-border text-primary"/><p>Loading dashboard…</p></div>
     </t>
@@ -189,6 +194,7 @@
                         <th class="text-center">🎓 Admissions</th>
                         <th class="text-center">Conv %</th>
                         <th>Bar</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -206,10 +212,13 @@
                                 <div class="uc_mini_bar"><div class="uc_mini_bar_fill uc_bar_lead" t-attf-style="width:#{getAdsetShare(row[state.period].leads)}%"/></div>
                                 <div class="uc_mini_bar mt-1"><div class="uc_mini_bar_fill uc_bar_adm" t-attf-style="width:#{getAdsetShare(row[state.period].admissions,true)}%"/></div>
                             </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.viewAdsetLeads(row.adset_id)" title="View leads">👁</button>
+                            </td>
                         </tr>
                     </t>
                     <t t-if="!getFilteredAdsets().length">
-                        <tr><td colspan="9" class="text-center text-muted">No ad set data yet</td></tr>
+                        <tr><td colspan="10" class="text-center text-muted">No ad set data yet</td></tr>
                     </t>
                 </tbody>
             </table>
@@ -231,6 +240,7 @@
                         <th class="text-center">Total</th>
                         <th class="text-center">🎓</th>
                         <th class="text-center">🔥</th>
+                        <th></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -245,10 +255,13 @@
                             <td class="text-center"><span class="badge bg-secondary"><t t-esc="ad.total"/></span></td>
                             <td class="text-center text-success"><strong><t t-esc="ad.admissions"/></strong></td>
                             <td class="text-center text-danger"><t t-esc="ad.hot"/></td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.viewAdLeads(ad.ad_id)" title="View leads">👁</button>
+                            </td>
                         </tr>
                     </t>
                     <t t-if="!getFilteredAds().length">
-                        <tr><td colspan="9" class="text-center text-muted">No ad data yet — import Ad IDs first</td></tr>
+                        <tr><td colspan="10" class="text-center text-muted">No ad data yet — import Ad IDs first</td></tr>
                     </t>
                 </tbody>
             </table>

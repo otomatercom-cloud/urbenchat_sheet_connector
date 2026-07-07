@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+<t t-name="urbenchat_sheet_connector.PerAdPerformanceView">
+    <div class="uc_standalone_page" style="padding:20px 24px;background:#f8fafc;">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="d-flex align-items-center">
+                <button class="btn btn-sm btn-link" t-on-click="back">← Back to Dashboard</button>
+                <h4 class="mb-0 ms-2">🔖 Per Ad Performance</h4>
+            </div>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" t-att-class="state.period==='today'?'active':''" t-on-click="() => this.setPeriod('today')">Today</button>
+                <button class="btn btn-outline-secondary" t-att-class="state.period==='week'?'active':''" t-on-click="() => this.setPeriod('week')">This Week</button>
+                <button class="btn btn-outline-secondary" t-att-class="state.period==='month'?'active':''" t-on-click="() => this.setPeriod('month')">This Month</button>
+                <button class="btn btn-outline-secondary" t-att-class="state.period==='all'?'active':''" t-on-click="() => this.setPeriod('all')">All Time</button>
+            </div>
+        </div>
+
+        <t t-if="state.loading">
+            <div class="text-center text-muted py-5">Loading…</div>
+        </t>
+        <t t-else="">
+            <div class="uc_section_card">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="uc_section_title mb-0">Per Ad Performance — <t t-esc="periodLabel()"/></h5>
+                    <input type="text" class="form-control form-control-sm" style="width:220px"
+                           placeholder="Search Ad ID or campaign…"
+                           t-on-input="onAdSearch"/>
+                </div>
+                <table class="table table-sm table-hover uc_table">
+                    <thead>
+                        <tr>
+                            <th>#</th><th>Ad ID</th><th>Source Campaign</th><th>Ad Set</th><th>Campaign</th>
+                            <th class="text-center">Period</th>
+                            <th class="text-center">Total</th>
+                            <th class="text-center">🎓</th>
+                            <th class="text-center">🔥</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="getRows()" t-as="ad" t-key="ad_index">
+                            <tr>
+                                <td><t t-esc="ad_index+1"/></td>
+                                <td><code style="font-size:11px;"><t t-esc="ad.ad_id"/></code></td>
+                                <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px;"><t t-esc="ad.source_camp"/></td>
+                                <td style="font-size:12px;" class="text-muted"><t t-esc="ad.adset"/></td>
+                                <td style="font-size:12px;" class="text-muted"><t t-esc="ad.campaign"/></td>
+                                <td class="text-center"><span class="badge bg-primary"><t t-esc="ad[state.period]||0"/></span></td>
+                                <td class="text-center"><span class="badge bg-secondary"><t t-esc="ad.total"/></span></td>
+                                <td class="text-center text-success"><strong><t t-esc="ad.admissions"/></strong></td>
+                                <td class="text-center text-danger"><t t-esc="ad.hot"/></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.viewLeads(ad.ad_id)" title="View leads">👁 View Leads</button>
+                                </td>
+                            </tr>
+                        </t>
+                        <t t-if="!getRows().length">
+                            <tr><td colspan="10" class="text-center text-muted">No ad data yet — import Ad IDs first</td></tr>
+                        </t>
+                    </tbody>
+                </table>
+            </div>
+        </t>
+    </div>
+</t>
+</templates>

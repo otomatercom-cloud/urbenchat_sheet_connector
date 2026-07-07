@@ -17,6 +17,7 @@ class UrbenchatDashboard extends Component {
     setup() {
         this.orm          = useService("orm");
         this.notification = useService("notification");
+        this.action       = useService("action");
         this.state = useState({
             loading: true, syncing: false,
             period: 'month', campaignFilter: '', adSearch: '',
@@ -100,6 +101,14 @@ class UrbenchatDashboard extends Component {
 
     // ── Period ────────────────────────────────────────────────────────────
     setPeriod(p) { this.state.period = p; }
+
+    openAdsetPerformance() {
+        this.action.doAction({ type: "ir.actions.client", tag: "urbenchat_adset_performance", target: "current" });
+    }
+    openPerAdPerformance() {
+        this.action.doAction({ type: "ir.actions.client", tag: "urbenchat_per_ad_performance", target: "current" });
+    }
+
     periodLabel() { return {today:'Today',week:'This Week',month:'This Month',all:'All Time'}[this.state.period]; }
 
     // ── KPI helpers ───────────────────────────────────────────────────────
@@ -153,6 +162,34 @@ class UrbenchatDashboard extends Component {
 
     // ── Per Ad ────────────────────────────────────────────────────────────
     onAdSearch(ev) { this.state.adSearch = ev.target.value.toLowerCase(); }
+
+    // ── Drill-down buttons ───────────────────────────────────────────────
+    async viewAdsetLeads(adsetId) {
+        try {
+            const action = await this.orm.call(
+                "urbenchat.sheet.config", "action_view_adset_leads",
+                [adsetId, this.state.period], {}
+            );
+            this.action.doAction(action);
+        } catch (e) {
+            console.error(e);
+            this.notification.add("Could not open leads for this ad set.", { type: "danger" });
+        }
+    }
+
+    async viewAdLeads(adId) {
+        try {
+            const action = await this.orm.call(
+                "urbenchat.sheet.config", "action_view_ad_leads",
+                [adId, this.state.period], {}
+            );
+            this.action.doAction(action);
+        } catch (e) {
+            console.error(e);
+            this.notification.add("Could not open leads for this ad.", { type: "danger" });
+        }
+    }
+
     getFilteredAds() {
         const q=this.state.adSearch, p=this.state.period;
         return (this.state.data.ad_perf||[])

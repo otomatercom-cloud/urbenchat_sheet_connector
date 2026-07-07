@@ -940,3 +940,44 @@ class UrbenchatSheetConfig(models.Model):
             'leads_this_week':  kpi['week'],
             'leads_this_month': kpi['month'],
         }
+
+    # ── Drill-down: open the actual leads behind a dashboard row ───────────
+    def _period_domain(self, period):
+        today = fields.Date.today()
+        if period == 'today':
+            return [('date_of_adding', '=', today)]
+        if period == 'week':
+            return [('date_of_adding', '>=', today - timedelta(days=today.weekday()))]
+        if period == 'month':
+            return [('date_of_adding', '>=', today.replace(day=1))]
+        return []  # 'all'
+
+    def action_view_adset_leads(self, adset_id, period='month'):
+        """Called from the dashboard's 'View' button on an Ad Set Performance row."""
+        campaign_ids = self.env['urbenchat.ad.mapping'].search([
+            ('adset_id', '=', adset_id), ('active', '=', True),
+        ]).mapped('source_campaign_id').ids
+        domain = [('source_campaign_id', 'in', campaign_ids or [0])] + self._period_domain(period)
+        adset = self.env['urbenchat.meta.adset'].browse(adset_id)
+        return {
+            'type':     'ir.actions.act_window',
+            'name':     _('Leads — %s') % (adset.name or 'Ad Set'),
+            'res_model': 'leads.logic',
+            'view_mode': 'list,form',
+            'domain':    domain,
+            'target':    'current',
+        }
+
+    def action_view_ad_leads(self, ad_id, period='month'):
+        """Called from the dashboard's 'View' button on a Per Ad Performance row."""
+        mapping = self.env['urbenchat.ad.mapping'].search([('ad_id', '=', ad_id)], limit=1)
+        campaign_id = mapping.source_campaign_id.id if mapping else 0
+        domain = [('source_campaign_id', '=', campaign_id)] + self._period_domain(period)
+        return {
+            'type':     'ir.actions.act_window',
+            'name':     _('Leads — Ad %s') % ad_id,
+            'res_model': 'leads.logic',
+            'view_mode': 'list,form',
+            'domain':    domain,
+            'target':    'current',
+        }

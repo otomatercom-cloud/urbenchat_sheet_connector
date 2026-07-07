@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+<t t-name="urbenchat_sheet_connector.AdsetPerformanceView">
+    <div class="uc_standalone_page" style="padding:20px 24px;background:#f8fafc;">
+        <div class="d-flex align-items-center justify-content-between mb-3">
+            <div class="d-flex align-items-center">
+                <button class="btn btn-sm btn-link" t-on-click="back">← Back to Dashboard</button>
+                <h4 class="mb-0 ms-2">🎯 Ad Set Performance</h4>
+            </div>
+            <div class="btn-group btn-group-sm">
+                <button class="btn btn-outline-secondary" t-att-class="state.period==='today'?'active':''" t-on-click="() => this.setPeriod('today')">Today</button>
+                <button class="btn btn-outline-secondary" t-att-class="state.period==='week'?'active':''" t-on-click="() => this.setPeriod('week')">This Week</button>
+                <button class="btn btn-outline-secondary" t-att-class="state.period==='month'?'active':''" t-on-click="() => this.setPeriod('month')">This Month</button>
+                <button class="btn btn-outline-secondary" t-att-class="state.period==='all'?'active':''" t-on-click="() => this.setPeriod('all')">All Time</button>
+            </div>
+        </div>
+
+        <t t-if="state.loading">
+            <div class="text-center text-muted py-5">Loading…</div>
+        </t>
+        <t t-else="">
+            <div class="uc_section_card">
+                <div class="d-flex align-items-center justify-content-between mb-3">
+                    <h5 class="uc_section_title mb-0">Ad Set Performance — <t t-esc="periodLabel()"/></h5>
+                    <select class="form-select form-select-sm" style="width:200px" t-on-change="onCampaignFilter">
+                        <option value="">All Campaigns</option>
+                        <t t-foreach="getCampaignList()" t-as="c" t-key="c"><option t-att-value="c"><t t-esc="c"/></option></t>
+                    </select>
+                </div>
+                <table class="table table-sm table-hover uc_table">
+                    <thead>
+                        <tr>
+                            <th>#</th><th>Campaign</th><th>Ad Set</th>
+                            <th class="text-center">Prospects</th>
+                            <th class="text-center">🔥 Hot</th>
+                            <th class="text-center">🌞 Warm</th>
+                            <th class="text-center">🎓 Admissions</th>
+                            <th class="text-center">Conv %</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="getRows()" t-as="row" t-key="row_index">
+                            <tr t-att-class="row_index===0?'uc_top_row':''">
+                                <td><t t-if="row_index===0">🥇</t><t t-elif="row_index===1">🥈</t><t t-elif="row_index===2">🥉</t><t t-else=""><t t-esc="row_index+1"/></t></td>
+                                <td class="text-muted" style="font-size:12px;"><t t-esc="row.campaign"/></td>
+                                <td><strong><t t-esc="row.adset"/></strong></td>
+                                <td class="text-center"><span class="badge bg-primary"><t t-esc="row[state.period].leads"/></span></td>
+                                <td class="text-center text-danger"><t t-esc="row[state.period].hot"/></td>
+                                <td class="text-center text-warning"><t t-esc="row[state.period].warm"/></td>
+                                <td class="text-center"><span class="badge bg-success"><t t-esc="row[state.period].admissions"/></span></td>
+                                <td class="text-center"><strong><t t-esc="getConvRate(row[state.period])"/>%</strong></td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" t-on-click="() => this.viewLeads(row.adset_id)" title="View leads">👁 View Leads</button>
+                                </td>
+                            </tr>
+                        </t>
+                        <t t-if="!getRows().length">
+                            <tr><td colspan="9" class="text-center text-muted">No ad set data yet</td></tr>
+                        </t>
+                    </tbody>
+                </table>
+            </div>
+        </t>
+    </div>
+</t>
+</templates>
