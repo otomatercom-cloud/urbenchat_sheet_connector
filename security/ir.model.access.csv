@@ -1,0 +1,18 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_meta_campaign_admin,urbenchat.meta.campaign admin,model_urbenchat_meta_campaign,base.group_system,1,1,1,1
+access_meta_campaign_teamlead,urbenchat.meta.campaign teamlead,model_urbenchat_meta_campaign,custom_leads.group_lead_team_lead,1,0,0,0
+access_meta_adset_admin,urbenchat.meta.adset admin,model_urbenchat_meta_adset,base.group_system,1,1,1,1
+access_meta_adset_teamlead,urbenchat.meta.adset teamlead,model_urbenchat_meta_adset,custom_leads.group_lead_team_lead,1,0,0,0
+access_ad_mapping_admin,urbenchat.ad.mapping admin,model_urbenchat_ad_mapping,base.group_system,1,1,1,1
+access_ad_mapping_teamlead,urbenchat.ad.mapping teamlead,model_urbenchat_ad_mapping,custom_leads.group_lead_team_lead,1,0,0,0
+access_sheet_config_admin,urbenchat.sheet.config admin,model_urbenchat_sheet_config,base.group_system,1,1,1,1
+access_sheet_config_teamlead,urbenchat.sheet.config teamlead,model_urbenchat_sheet_config,custom_leads.group_lead_team_lead,1,0,0,0
+access_sync_log_admin,urbenchat.sync.log admin,model_urbenchat_sync_log,base.group_system,1,1,1,1
+access_sync_log_teamlead,urbenchat.sync.log teamlead,model_urbenchat_sync_log,custom_leads.group_lead_team_lead,1,0,0,0
+access_column_mapping_admin,urbenchat.column.mapping admin,model_urbenchat_column_mapping,base.group_system,1,1,1,1
+access_column_mapping_teamlead,urbenchat.column.mapping teamlead,model_urbenchat_column_mapping,custom_leads.group_lead_team_lead,1,0,0,0
+access_synced_record_admin,urbenchat.synced.record admin,model_urbenchat_synced_record,base.group_system,1,1,1,1
+access_test_wizard_admin,urbenchat.test.connection.wizard admin,model_urbenchat_test_connection_wizard,base.group_system,1,1,1,1
+access_bulk_wizard_admin,urbenchat.bulk.ad.wizard admin,model_urbenchat_bulk_ad_wizard,base.group_system,1,1,1,1
+access_bulk_wizard_line_admin,urbenchat.bulk.ad.wizard.line admin,model_urbenchat_bulk_ad_wizard_line,base.group_system,1,1,1,1
+access_excel_import_admin,urbenchat.excel.import.wizard admin,model_urbenchat_excel_import_wizard,base.group_system,1,1,1,1
