@@ -190,6 +190,84 @@ class UrbenchatSheetConfig(models.Model):
             )
             logs[30:].unlink()
 
+    @api.model
+    def action_dedupe_re_enquiries(self):
+        """
+        One-time cleanup for the repeated-sync duplicate-re-enquiry bug:
+        collapses every group of lead.re.enquiry records that share the
+        same (lead_id, leads_source) down to just the EARLIEST one,
+        deleting the rest. Also backfills urbenchat_synced_record for
+        every survivor so the fast-path tracker is back in sync and
+        won't immediately recreate what this just cleaned up.
+
+        Not scoped to a single config — lead.re.enquiry doesn't carry a
+        config_id, so this cleans up duplicates system-wide regardless
+        of which sheet config created them. Safe to run any time; a
+        group with only one record is left untouched.
+        """
+        cr = self.env.cr
+        cr.execute("""
+            SELECT lead_id, leads_source, array_agg(id ORDER BY id) AS ids
+            FROM   lead_re_enquiry
+            WHERE  leads_source IS NOT NULL
+            GROUP  BY lead_id, leads_source
+            HAVING COUNT(*) > 1
+        """)
+        groups = cr.fetchall()
+
+        dup_ids = []
+        keepers = []  # (lead_id, leads_source, kept_id) — for tracker backfill
+        for lead_id, leads_source, ids in groups:
+            keepers.append((lead_id, leads_source, ids[0]))
+            dup_ids.extend(ids[1:])  # keep the first (earliest id), drop the rest
+
+        deleted = 0
+        if dup_ids:
+            self.env['lead.re.enquiry'].browse(dup_ids).unlink()
+            deleted = len(dup_ids)
+
+        # Backfill the tracker for survivors so it doesn't immediately
+        # start recreating what was just cleaned up. Best-effort: without
+        # a config_id on lead.re.enquiry we can't know which config to
+        # attribute it to, so this stamps it against every active config
+        # for this lead's phone — harmless if a config never touches
+        # this phone, since unique_key just won't be checked for it.
+        if keepers:
+            leads_by_id = {
+                l.id: l for l in
+                self.env['leads.logic'].browse([k[0] for k in keepers]).exists()
+            }
+            configs = self.search([('active', '=', True)])
+            rows = []
+            for lead_id, leads_source, _kept_id in keepers:
+                lead = leads_by_id.get(lead_id)
+                if not lead or not lead.phone_number:
+                    continue
+                for cfg in configs:
+                    rows.append((cfg.id, f'{lead.phone_number}::0', lead.phone_number, 0, 're_enquiry'))
+            if rows:
+                cr.executemany(
+                    """INSERT INTO urbenchat_synced_record
+                           (config_id, unique_key, phone, source_campaign_id, synced_at, result)
+                       VALUES (%s, %s, %s, %s, NOW(), %s)
+                       ON CONFLICT (config_id, unique_key) DO NOTHING""",
+                    rows,
+                )
+
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': _("Re-Enquiry Dedupe"),
+                'message': _(
+                    "Found %s duplicate group(s), deleted %s duplicate record(s), "
+                    "kept the earliest of each."
+                ) % (len(groups), deleted),
+                'type': 'success',
+                'sticky': False,
+            },
+        }
+
     def _compute_totals(self):
         for rec in self:
             logs = rec.sync_log_ids
@@ -514,6 +592,30 @@ class UrbenchatSheetConfig(models.Model):
             [('phone_number', '=', phone)], limit=1
         )
         if existing:
+            # ── 4a. AUTHORITATIVE safety net ────────────────────────────
+            # The urbenchat_synced_record tracker above is a fast-path
+            # cache, and can go stale (module not upgraded after this
+            # dedup was added, a manual DB restore, a row it never
+            # managed to persist, etc). Before creating anything, ask
+            # the real source of truth — lead.re.enquiry itself — whether
+            # a re-enquiry for this exact lead + this exact New Source
+            # already exists. If it does, this is a duplicate no matter
+            # what the tracker says, so skip and self-heal the tracker.
+            dup_re_enquiry = self.env['lead.re.enquiry'].search([
+                ('lead_id', '=', existing.id),
+                ('leads_source', '=', leads_source_id or False),
+            ], limit=1)
+            if dup_re_enquiry:
+                already_synced.add(unique_key)
+                self.env.cr.execute(
+                    """INSERT INTO urbenchat_synced_record
+                           (config_id, unique_key, phone, source_campaign_id, synced_at, result)
+                       VALUES (%s, %s, %s, %s, NOW(), 're_enquiry')
+                       ON CONFLICT (config_id, unique_key) DO NOTHING""",
+                    (self.id, unique_key, phone, sc_id),
+                )
+                return 'already_synced'
+
             self._create_re_enquiry(
                 existing, row, col_map,
                 source_campaign_id, leads_source_id, _val

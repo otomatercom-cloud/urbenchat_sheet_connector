@@ -25,25 +25,26 @@ class UrbenchatDashboard extends Component {
         });
         this._refreshTimer = null;
         this.rootRef = useRef("uc_root");
-        this._onResize = () => this._fixHeight();
+        this._onResize = () => this._fixScroll();
         onWillStart(() => this._loadData());
         onMounted(() => {
             this._renderCharts();
             this._startAutoRefresh();
-            this._fixHeight();
+            this._fixScroll();
             window.addEventListener("resize", this._onResize);
             // Chart.js loads async from CDN and reflows the page afterward;
-            // a single snapshot at mount time is too early. Re-check a few
-            // times as things settle, then watch for any further size
-            // changes to the content itself (table rows, chart resize, etc).
-            [50, 200, 500, 1000, 2000].forEach(ms => setTimeout(() => this._fixHeight(), ms));
+            // a single check at mount time is too early, and Odoo's own JS
+            // can re-apply inline styles to .o_content after we run (e.g.
+            // when the breadcrumb finishes mounting) so we recheck a few
+            // times as things settle, then watch continuously.
+            [50, 200, 500, 1000, 2000].forEach(ms => setTimeout(() => this._fixScroll(), ms));
             if (window.ResizeObserver && this.rootRef.el) {
-                this._resizeObserver = new ResizeObserver(() => this._fixHeight());
+                this._resizeObserver = new ResizeObserver(() => this._fixScroll());
                 this._resizeObserver.observe(this.rootRef.el);
                 this._resizeObserver.observe(document.body);
             }
         });
-        onPatched(() => { if (!this.state.loading) { this._renderCharts(); this._fixHeight(); } });
+        onPatched(() => { if (!this.state.loading) { this._renderCharts(); this._fixScroll(); } });
         onWillUnmount(() => {
             this._stopAutoRefresh();
             window.removeEventListener("resize", this._onResize);
@@ -51,28 +52,37 @@ class UrbenchatDashboard extends Component {
         });
     }
 
-    // ── Force a real, guaranteed-working scroll area ────────────────────────
-    // Odoo's backend layout wraps client actions in ancestors whose height
-    // is resolved via flex, not a plain fixed value — CSS height:100% on our
-    // own root can't reliably inherit that (it collapses to auto in some
-    // views), so we measure the real remaining viewport space at runtime.
-    // We DON'T shrink the height when content is smaller than the viewport
-    // (that would remove the need for scrolling); we only ever set it based
-    // on the fixed top offset so it consistently spans from the header down
-    // to the bottom of the window, with its own scrollbar handling anything
-    // taller than that.
-    _fixHeight() {
+    // ── Force real, guaranteed-working scrolling ─────────────────────────
+    // Root cause: Odoo's DESKTOP layout sets overflow:hidden on its own
+    // .o_content wrapper (each client action is expected to manage its own
+    // internal scroll region). Odoo's MOBILE breakpoint does NOT apply that
+    // restriction, which is exactly why this dashboard scrolls fine on
+    // mobile but not desktop. Trying to make our own div into its own
+    // scroll container (via height:100%/overflow-y:auto on uc_dashboard)
+    // depends on that div having a bounded height, which is unreliable
+    // across Odoo views/themes. Instead we go straight to the actual
+    // ancestor that's clipping content and force IT open via inline style
+    // (max specificity — no CSS/SCSS override can out-rank an inline
+    // style, so this can't lose a specificity fight), and let our own div
+    // flow naturally so the browser's native scroll (same mechanism mobile
+    // already uses) just works.
+    _fixScroll() {
         const el = this.rootRef.el;
         if (!el) return;
-        const top = el.getBoundingClientRect().top;
-        const available = Math.max(window.innerHeight - top, 300);
-        if (el.style.height === available + "px") return; // avoid ResizeObserver feedback loop
-        el.style.height = available + "px";
-        el.style.maxHeight = available + "px";
-        el.style.overflowY = "auto";
-        el.style.overflowX = "hidden";
-        el.style.boxSizing = "border-box";
-        el.style.display = "block";
+        el.style.height = "auto";
+        el.style.maxHeight = "none";
+        el.style.overflow = "visible";
+        const content = el.closest(".o_content");
+        if (content) {
+            content.style.overflowY = "auto";
+            content.style.overflowX = "hidden";
+            content.style.height = "100%";
+        }
+        const actionManager = el.closest(".o_action_manager");
+        if (actionManager) {
+            actionManager.style.overflowY = "auto";
+            actionManager.style.height = "100%";
+        }
     }
 
     // ── Data ──────────────────────────────────────────────────────────────

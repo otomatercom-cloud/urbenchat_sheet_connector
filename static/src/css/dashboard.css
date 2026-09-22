@@ -5,8 +5,6 @@
     font-family:"Inter","Roboto",sans-serif;
     box-sizing:border-box;
     display:block;
-    overflow-y:auto;
-    overflow-x:hidden;
 }
 
 /* Header */

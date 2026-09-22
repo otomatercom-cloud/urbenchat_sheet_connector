@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <templates xml:space="preserve">
 <t t-name="urbenchat_sheet_connector.PerAdPerformanceView">
-    <div class="uc_standalone_page" style="padding:20px 24px;background:#f8fafc;">
+    <div class="uc_standalone_page" t-ref="uc_root" style="padding:20px 24px;background:#f8fafc;">
         <div class="d-flex align-items-center justify-content-between mb-3">
             <div class="d-flex align-items-center">
                 <button class="btn btn-sm btn-link" t-on-click="back">← Back to Dashboard</button>

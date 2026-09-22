@@ -1,6 +1,6 @@
 /** @odoo-module **/
 
-import { Component, useState, onWillStart } from "@odoo/owl";
+import { Component, useState, useRef, onWillStart, onMounted, onWillUnmount } from "@odoo/owl";
 import { registry } from "@web/core/registry";
 import { useService } from "@web/core/utils/hooks";
 
@@ -15,7 +15,31 @@ export class PerAdPerformanceView extends Component {
         this.state = useState({
             loading: true, period: 'month', adSearch: '', rows: [],
         });
+        this.rootRef = useRef("uc_root");
+        this._onResize = () => this._fixScroll();
         onWillStart(() => this._load());
+        onMounted(() => {
+            this._fixScroll();
+            window.addEventListener("resize", this._onResize);
+            [50, 200, 500, 1000].forEach(ms => setTimeout(() => this._fixScroll(), ms));
+        });
+        onWillUnmount(() => window.removeEventListener("resize", this._onResize));
+    }
+
+    _fixScroll() {
+        const el = this.rootRef.el;
+        if (!el) return;
+        const content = el.closest(".o_content");
+        if (content) {
+            content.style.overflowY = "auto";
+            content.style.overflowX = "hidden";
+            content.style.height = "100%";
+        }
+        const actionManager = el.closest(".o_action_manager");
+        if (actionManager) {
+            actionManager.style.overflowY = "auto";
+            actionManager.style.height = "100%";
+        }
     }
 
     async _load() {

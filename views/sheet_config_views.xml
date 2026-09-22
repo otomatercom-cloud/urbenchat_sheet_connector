@@ -37,6 +37,9 @@
                     <button name="action_reset_sync_tracking" string="↺ Reset Tracking"
                             type="object" class="btn-secondary"
                             confirm="This clears all processed row records. Next sync will re-process the full sheet from the beginning. Continue?"/>
+                    <button name="action_dedupe_re_enquiries" string="🧹 Dedupe Re-Enquiries"
+                            type="object" class="btn-danger"
+                            confirm="This permanently deletes duplicate Re-Enquiry records (same lead + same New Source), keeping only the earliest one in each group, system-wide across all sheet configs. This cannot be undone. Continue?"/>
                 </header>
                 <sheet>
                     <div class="oe_title">
